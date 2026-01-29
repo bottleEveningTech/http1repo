@@ -14,6 +14,15 @@ import { catchError, map, throwError } from 'rxjs';
   imports: [PlacesComponent, PlacesContainerComponent]
 })
 export class AvailablePlacesComponent implements OnInit {
+  // console.log(event);
+  // console.log(resData.places);
+  onSelectPlace(place: Place) {
+    this.httpClient.put('http://localhost:3000/user-places', {placeId: place.id}).subscribe({
+      next:(res)=> {
+        return console.log(res);
+      }
+    });
+  }
   places = signal<Place[] | undefined>(undefined);
   // private httpClient = inject(HttpClient); way 1
   private destroyRef = inject(DestroyRef);
