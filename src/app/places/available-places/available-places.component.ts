@@ -5,6 +5,7 @@ import { PlacesComponent } from '../places.component';
 import { PlacesContainerComponent } from '../places-container/places-container.component';
 import { HttpClient } from '@angular/common/http';
 import { catchError, map, throwError } from 'rxjs';
+import { PlacesService } from '../places.service';
 
 @Component({
   selector: 'app-available-places',
@@ -17,30 +18,27 @@ export class AvailablePlacesComponent implements OnInit {
   // console.log(event);
   // console.log(resData.places);
   onSelectPlace(place: Place) {
-    this.httpClient.put('http://localhost:3000/user-places', {placeId: place.id}).subscribe({
+   const selectsub =  this.placesService.addPlaceToUserPlaces(place.id)
+   .subscribe({
       next:(res)=> {
         return console.log(res);
       }
     });
+    this.destroyRef.onDestroy(() => {
+      selectsub.unsubscribe();
+    })
   }
   places = signal<Place[] | undefined>(undefined);
   // private httpClient = inject(HttpClient); way 1
   private destroyRef = inject(DestroyRef);
   public isFetching = signal<boolean>(false);
   public error = signal<string>('');
-  constructor(private httpClient: HttpClient) {
+  constructor(private httpClient: HttpClient, private placesService: PlacesService) {
 
   }
   ngOnInit(): void {
     this.isFetching.set(true);
-    const subs = this.httpClient.get<{ places: Place[] }>('http://localhost:3000/places').
-      pipe(map((val) => val.places),
-        catchError((err, observable) => {
-          console.log(err);
-          return throwError(() => {
-            return new Error('Something went wrong in fetching')
-          });
-        }))
+    const subs = this.placesService.loadAvailablePlaces()
       .subscribe({
         next: (resData) => {
           this.places.set(resData);
