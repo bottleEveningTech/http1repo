@@ -13,6 +13,7 @@ import { PlacesService } from '../places.service';
   imports: [PlacesContainerComponent, PlacesComponent],
 })
 export class UserPlacesComponent implements OnInit {
+
   private destroyRef = inject(DestroyRef);
   public isFetching = signal<boolean>(false);
   public error = signal<string>('');
@@ -24,21 +25,29 @@ export class UserPlacesComponent implements OnInit {
   ngOnInit(): void {
     this.isFetching.set(true);
     const subs = this.placesService.loadUserPlaces().subscribe({
-        // next: (resData) => {
-        //   this.places.set(resData);
-        //   // console.log(response.body?.places);
-        //   // console.log(event);
-        //   // console.log(resData.places);
-        // },
-        complete: () => {
-          this.isFetching.set(false);
-        },
-        error: (err: Error) => {
-          console.log(err);
-          this.error.set(err.message);
-          // this.error.set("Something went wrong fetching available places. Try again later!");
-        }
-      });
+      // next: (resData) => {
+      //   this.places.set(resData);
+      //   // console.log(response.body?.places);
+      //   // console.log(event);
+      //   // console.log(resData.places);
+      // },
+      complete: () => {
+        this.isFetching.set(false);
+      },
+      error: (err: Error) => {
+        console.log(err);
+        this.error.set(err.message);
+        // this.error.set("Something went wrong fetching available places. Try again later!");
+      }
+    });
+
+    this.destroyRef.onDestroy(() => {
+      subs.unsubscribe();
+    })
+  }
+
+  onRemovePlace(place: Place) {
+    const subs = this.placesService.removeUserPlace(place).subscribe();
 
     this.destroyRef.onDestroy(() => {
       subs.unsubscribe();
