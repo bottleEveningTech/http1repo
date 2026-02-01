@@ -14,30 +14,42 @@ export class PlacesService {
 
   loadedUserPlaces = this.userPlaces.asReadonly();
 
-  loadAvailablePlaces() { 
-    return this.fetchPlaces('http://localhost:3000/places', 
+  loadAvailablePlaces() {
+    return this.fetchPlaces('http://localhost:3000/places',
       'Something went wrong in fetching available places'
     )
   }
 
-  loadUserPlaces() { 
-    return this.fetchPlaces('http://localhost:3000/user-places', 
+  loadUserPlaces() {
+    return this.fetchPlaces('http://localhost:3000/user-places',
       'Something went wrong in fetching user places'
     ).pipe(tap({
-      next: (userPlaces)=> {
+      next: (userPlaces) => {
         this.userPlaces.set(userPlaces);
       }
     }))
   }
 
-  addPlaceToUserPlaces(place: Place) { 
-    this.userPlaces.update((previous)=> [...previous, place]);
-     return this.httpClient.put('http://localhost:3000/user-places', {placeId: place.id});
+  addPlaceToUserPlaces(place: Place) {
+    const prevPlaces = this.userPlaces();
+    if (!prevPlaces.some(places => places.id === place.id)) {
+      this.userPlaces.set([...prevPlaces, place]);
+
+    }
+
+
+    return this.httpClient.put('http://localhost:3000/user-places', { placeId: place.id })
+      .pipe(catchError(error => {
+        this.userPlaces.set(prevPlaces);
+        return throwError(() => {
+          new Error("Failed to store selected place");
+        })
+      }));
   }
 
   removeUserPlace(place: Place) { }
 
-  private fetchPlaces(url:string, errorMessage:string) {
+  private fetchPlaces(url: string, errorMessage: string) {
     return this.httpClient.get<{ places: Place[] }>(url).
       pipe(map((val) => val.places),
         catchError((err, observable) => {
